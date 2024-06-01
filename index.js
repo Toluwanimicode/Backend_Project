@@ -1,13 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const Admission = require('./models/admissions.js');
 
-const app = express();
-const port = 3000;
+// Load environment variables from .env file
+dotenv.config();
 
-// Connect to MongoDB
-mongoose.connect("mongodb+srv://DAT:Tolu1329@cluster0.oetks32.mongodb.net/admissioncollection?retryWrites=true&w=majority")
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Connect to MongoDB using the connection string from environment variables
+mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("Connected to the database");
 
@@ -17,18 +21,19 @@ mongoose.connect("mongodb+srv://DAT:Tolu1329@cluster0.oetks32.mongodb.net/admiss
 
     // Define route to handle form submissions
     app.post('/api/admissions', async (req, res) => {
-        try {
-          console.log('Form submission received:', req.body);
-      
-          // ... (rest of your code)
-      
-          res.status(201).json({ message: 'Form submitted successfully!' });
-        } catch (error) {
-          console.error('Error processing form submission:', error);
-          res.status(500).json({ message: 'Internal server error' });
-        }
-      });
-      
+      try {
+        console.log('Form submission received:', req.body);
+
+        // Process the form submission
+        const newAdmission = new Admission(req.body);
+        await newAdmission.save();
+
+        res.status(201).json({ message: 'Form submitted successfully!' });
+      } catch (error) {
+        console.error('Error processing form submission:', error);
+        res.status(500).json({ message: 'Internal server error' });
+      }
+    });
 
     // Default route
     app.get('/', (req, res) => {
@@ -40,6 +45,7 @@ mongoose.connect("mongodb+srv://DAT:Tolu1329@cluster0.oetks32.mongodb.net/admiss
       console.log(`Server is running at http://localhost:${port}`);
     });
   })
-.catch((error) => {
+  .catch((error) => {
     console.error("Error connecting to the database:", error);
-});
+  });
+
